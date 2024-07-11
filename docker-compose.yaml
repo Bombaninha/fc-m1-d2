@@ -1,0 +1,41 @@
+services:
+  app-m1-d2: 
+    build: 
+      context: node
+    container_name: app-m1-d2
+    entrypoint: dockerize --wait tcp://db-m1-d2:3306 -timeout 20s node index.js
+    networks:
+      - nodenet
+    volumes:
+      - ./node:/usr/src/app
+    tty: true
+    ports:
+      - "3000:3000"
+
+  db-m1-d2: 
+    image: mysql:5.7
+    command: --innodb-use-native-aio=0
+    container_name: db-m1-d2
+    restart: always
+    tty: true
+    volumes:
+      - ./mysql:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      - MYSQL_DATABASE=nodedb
+      - MYSQL_ROOT_PASSWORD=root
+    networks:
+      - nodenet
+    
+  nginx-m1-d2:
+    build:
+      context: ./nginx
+    container_name: nginx-m1-d2
+    ports:
+      - "8080:80"
+    networks:
+      - nodenet
+
+networks:
+  nodenet:
+    driver: bridge
